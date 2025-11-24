@@ -1,4 +1,4 @@
-// --- ALL CALCULATION FUNCTIONS (Kept clean for clarity) ---
+// --- ALL CALCULATION FUNCTIONS (Unchanged from previous response) ---
 
 function solveSystem(a11, a12, b1, a21, a22, b2) {
     const A = [[a11, a12], [a21, a22]];
@@ -19,16 +19,13 @@ function solveSystem(a11, a12, b1, a21, a22, b2) {
         return output;
     }
 
-    // Since all methods must yield the same result, we run them all
     output.cramers = calculateCramersRule(A, b, det);
     output.gaussian = calculateGaussianElimination(A, b);
     
-    // Final solution uses Cramer's result for reliability
     const finalX = output.cramers.solution.x.toFixed(4);
     const finalY = output.cramers.solution.y.toFixed(4);
     output.solution = `x = ${finalX}, y = ${finalY}`;
 
-    // Plotting Data Generation
     output.vectors = generateVectorPlotData(A, b, finalX, finalY);
     output.scalarLines = generateScalarLinePlotData(A, b, finalX, finalY);
 
@@ -122,22 +119,67 @@ function generateScalarLinePlotData(A, b, finalX, finalY) {
 
 // --- DOM MANIPULATION & RENDERING ---
 
+// Function to render LaTeX using KaTeX
+function renderOutput(element, latexString) {
+    const parts = latexString.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/);
+    element.innerHTML = '';
+
+    parts.forEach(part => {
+        if (part.startsWith('$$') && part.endsWith('$$')) {
+            const mathDiv = document.createElement('div');
+            mathDiv.className = 'math-block display-math';
+            try {
+                // Renders display math: $$...$$
+                katex.render(part.slice(2, -2).trim(), mathDiv, { throwOnError: false, displayMode: true });
+            } catch (e) { mathDiv.textContent = 'Math rendering error.'; }
+            element.appendChild(mathDiv);
+        } else if (part.startsWith('$') && part.endsWith('$')) {
+            const mathSpan = document.createElement('span');
+            mathSpan.className = 'math-block inline-math';
+            try {
+                // Renders inline math: $...$
+                katex.render(part.slice(1, -1).trim(), mathSpan, { throwOnError: false, displayMode: false });
+            } catch (e) { mathSpan.textContent = 'Math rendering error.'; }
+            element.appendChild(mathSpan);
+        } else {
+            if (part.trim() !== '') {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = part.trim();
+                while (tempDiv.firstChild) {
+                    element.appendChild(tempDiv.firstChild);
+                }
+            }
+        }
+    });
+}
+
+function initializeKaTeXOnPage() {
+    // This targets ALL elements on the page that might contain unrendered LaTeX
+    // (specifically targeting p and h tags to avoid processing script/input areas unnecessarily)
+    document.querySelectorAll('p, h1, h2, h3, h4, footer').forEach(element => {
+        // Only run if the element actually contains the unrendered '$' symbol
+        if (element.innerHTML.includes('$')) {
+            renderOutput(element, element.innerHTML);
+        }
+    });
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if we are on a calculator page
+    // === FIX FOR UNRENDERED LATEX ON ALL PAGES ===
+    initializeKaTeXOnPage();
+    // ===========================================
+
+    // Check if we are on a calculator page (where methodId is defined)
     if (typeof methodId === 'undefined') return; 
 
     const form = document.getElementById('solver-form');
     const resultsDiv = document.getElementById('results');
     const finalSolutionSpan = document.getElementById('final-solution');
     const detInfo = document.getElementById('determinant-info');
-    const methodOutput = document.getElementById('method-output'); // Used by Cramer's and Gaussian
-    const vectorPlotOutput = document.getElementById('vector-plot-output'); // Used by Vectors page
-    const scalarLineOutput = document.getElementById('scalar-line-output'); // Used by Vectors page
-
-    // Initial render for the system example on all pages
-    document.querySelectorAll('.container p').forEach(element => {
-        renderOutput(element, element.innerHTML);
-    });
+    const methodOutput = document.getElementById('method-output');
+    const vectorPlotOutput = document.getElementById('vector-plot-output');
+    const scalarLineOutput = document.getElementById('scalar-line-output');
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -150,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const a22 = parseFloat(document.getElementById('a22').value);
         const b2 = parseFloat(document.getElementById('b2').value);
 
-        // 2. Solve System (runs all methods)
+        // 2. Solve System
         const result = solveSystem(a11, a12, b1, a21, a22, b2);
 
         // 3. Display Results
@@ -187,7 +229,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayVectorPlottingData(data) {
-        // Renders the column space interpretation
         const html = `
             <p>The solution is a **linear combination** of the column vectors of $\\mathbf{A}$ that results in the constant vector $\\mathbf{b}$.</p>
             <p class="vector-eq-box">$$ ${data.linear_combination_equation} $$</p>
@@ -199,14 +240,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 <li>**Column Vector 2** ($\\vec{v_2}$): $\\begin{pmatrix} ${data.column_vector2.x} \\\\ ${data.column_vector2.y} \\end{pmatrix}$</li>
                 <li>**Result Vector** ($\\vec{b}$): $\\begin{pmatrix} ${data.constant_vector_b.x} \\\\ ${data.constant_vector_b.y} \\end{pmatrix}$</li>
             </ul>
-            <p class="plot-hint">To plot the solution: Draw $\\vec{v_1}$ scaled by $x$, then draw $\\vec{v_2}$ scaled by $y$ starting from the tip of the first vector. The final point reached should be the tip of $\\vec{b}$.</p>
-            <p>  </p>
+            <p class="plot-hint">To plot the solution: draw $\\vec{v_1}$ scaled by $x$, then draw $\\vec{v_2}$ scaled by $y$ starting from the tip of the first vector. The final point reached should be the tip of $\\vec{b}$.  </p>
         `;
         renderOutput(vectorPlotOutput, html);
     }
 
     function displayScalarLinePlottingData(data) {
-        // Renders the row space interpretation (line intersection)
         const html = `
             <p>This is the traditional graphing method where the solution is the point of intersection of the two lines.</p>
             <h4>Slope-Intercept Form ($y=mx+b$):</h4>
@@ -218,37 +257,5 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="plot-hint">  </p>
         `;
         renderOutput(scalarLineOutput, html);
-    }
-
-    // Function to render LaTeX using KaTeX
-    function renderOutput(element, latexString) {
-        const parts = latexString.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/);
-        element.innerHTML = '';
-
-        parts.forEach(part => {
-            if (part.startsWith('$$') && part.endsWith('$$')) {
-                const mathDiv = document.createElement('div');
-                mathDiv.className = 'math-block display-math';
-                try {
-                    katex.render(part.slice(2, -2).trim(), mathDiv, { throwOnError: false, displayMode: true });
-                } catch (e) { mathDiv.textContent = 'Math rendering error.'; }
-                element.appendChild(mathDiv);
-            } else if (part.startsWith('$') && part.endsWith('$')) {
-                const mathSpan = document.createElement('span');
-                mathSpan.className = 'math-block inline-math';
-                try {
-                    katex.render(part.slice(1, -1).trim(), mathSpan, { throwOnError: false, displayMode: false });
-                } catch (e) { mathSpan.textContent = 'Math rendering error.'; }
-                element.appendChild(mathSpan);
-            } else {
-                if (part.trim() !== '') {
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = part.trim();
-                    while (tempDiv.firstChild) {
-                        element.appendChild(tempDiv.firstChild);
-                    }
-                }
-            }
-        });
     }
 });
