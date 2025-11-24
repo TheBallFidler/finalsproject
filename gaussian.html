@@ -1,4 +1,48 @@
-<script>const methodId = 'gaussian';</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaussian Elimination Calculator</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Solver Hub</a>
+        <h1 id="page-title">Gaussian Elimination Calculator</h1>
+        <p>Enter coefficients for: $a_{11}x + a_{12}y = b_1$ and $a_{21}x + a_{22}y = b_2$</p>
+
+        <form id="solver-form">
+            <div class="matrix-grid">
+                <input type="number" id="a11" placeholder="a11" required value="2">
+                <span class="operator">x +</span>
+                <input type="number" id="a12" placeholder="a12" required value="3">
+                <span class="operator">y =</span>
+                <input type="number" id="b1" placeholder="b1" required value="7">
+
+                <input type="number" id="a21" placeholder="a21" required value="1">
+                <span class="operator">x +</span>
+                <input type="number" id="a22" placeholder="a22" required value="-2">
+                <span class="operator">y =</span>
+                <input type="number" id="b2" placeholder="b2" required value="1">
+            </div>
+            <button type="submit" id="solve-button">Solve & Show Process</button>
+        </form>
+
+        <div id="results" class="hidden">
+            <h2>✅ Solution: <span id="final-solution"></span></h2>
+            <p id="determinant-info"></p>
+
+            <div class="method-section">
+                <h3>Operation Process</h3>
+                <div id="method-output">
+                    <p class="plot-hint">The solution steps will appear here after you click "Solve." They will show the row operations to reach **Row Echelon Form**.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>const methodId = 'gaussian';</script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <script defer src="script.js"></script>
 </body>
