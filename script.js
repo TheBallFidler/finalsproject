@@ -1,4 +1,4 @@
-// --- ALL CALCULATION FUNCTIONS (Unchanged from previous versions) ---
+// --- ALL CALCULATION FUNCTIONS (Updated for Verbosity) ---
 
 function solveSystem(a11, a12, b1, a21, a22, b2) {
     const A = [[a11, a12], [a21, a22]];
@@ -22,6 +22,7 @@ function solveSystem(a11, a12, b1, a21, a22, b2) {
     output.cramers = calculateCramersRule(A, b, det);
     output.gaussian = calculateGaussianElimination(A, b);
     
+    // Use the results from Cramer's Rule as the authoritative final solution
     const finalX = output.cramers.solution.x.toFixed(4);
     const finalY = output.cramers.solution.y.toFixed(4);
     output.solution = `x = ${finalX}, y = ${finalY}`;
@@ -41,15 +42,24 @@ function calculateCramersRule(A, b, det) {
 
     const x = det_x / det;
     const y = det_y / det;
-
+    
+    // Added explicit multiplication steps and final answers for max verbosity
     const workingText = `
+        <h3>Matrix and Determinant Setup</h3>
+        <p>The coefficient matrix $\\mathbf{A}$ and the constant vector $\\mathbf{b}$ are:</p>
+        $$ \\mathbf{A} = \\begin{pmatrix} ${a11} & ${a12} \\\\ ${a21} & ${a22} \\end{pmatrix}, \\quad \\mathbf{b} = \\begin{pmatrix} ${b1} \\\\ ${b2} \\end{pmatrix} $$
+        
         <p>1. Calculate the **Determinant (D)** of $\\mathbf{A}$:</p>
-        $$ D = \\begin{vmatrix} ${a11} & ${a12} \\\\ ${a21} & ${a22} \\end{vmatrix} = (${a11})(${a22}) - (${a12})(${a21}) = ${det} $$
+        $$ D = \\begin{vmatrix} ${a11} & ${a12} \\\\ ${a21} & ${a22} \\end{vmatrix} = (${a11})(${a22}) - (${a12})(${a21}) = (${a11 * a22}) - (${a12 * a21}) = ${det} $$
+        
+        <h3>Solving for Variables</h3>
         <p>2. Calculate $\\mathbf{D_x}$ (Replace column 1 with $\\mathbf{b}$):</p>
-        $$ D_x = \\begin{vmatrix} ${b1} & ${a12} \\\\ ${b2} & ${a22} \\end{vmatrix} = (${b1})(${a22}) - (${a12})(${b2}) = ${det_x} $$
+        $$ D_x = \\begin{vmatrix} ${b1} & ${a12} \\\\ ${b2} & ${a22} \\end{vmatrix} = (${b1})(${a22}) - (${a12})(${b2}) = (${b1 * a22}) - (${a12 * b2}) = ${det_x} $$
+        
         <p>3. Calculate $\\mathbf{D_y}$ (Replace column 2 with $\\mathbf{b}$):</p>
-        $$ D_y = \\begin{vmatrix} ${a11} & ${b1} \\\\ ${a21} & ${b2} \\end{vmatrix} = (${a11})(${b2}) - (${b1})(${a21}) = ${det_y} $$
-        <p>4. Calculate $\\mathbf{x}$ and $\\mathbf{y}$:</p>
+        $$ D_y = \\begin{vmatrix} ${a11} & ${b1} \\\\ ${a21} & ${b2} \\end{vmatrix} = (${a11})(${b2}) - (${b1})(${a21}) = (${a11 * b2}) - (${b1 * a21}) = ${det_y} $$
+        
+        <p>4. Calculate $\\mathbf{x}$ and $\\mathbf{y}$ using the rule $x = D_x/D$ and $y = D_y/D$:</p>
         $$ x = \\frac{D_x}{D} = \\frac{${det_x}}{${det}} = ${x.toFixed(4)} $$
         $$ y = \\frac{D_y}{D} = \\frac{${det_y}}{${det}} = ${y.toFixed(4)} $$
     `;
@@ -61,32 +71,49 @@ function calculateGaussianElimination(A, b) {
     let a0 = A[0][0], a1 = A[0][1], b_val0 = b[0];
     let a2 = A[1][0], a3 = A[1][1], b_val1 = b[1];
     
-    let workingText = `<p>1. Start with the **Augmented Matrix**:</p>
+    // Check for trivial case before starting
+    if (a0 === 0) {
+        return { solution: { x: NaN, y: NaN }, workingText: `<p class="error-msg">The leading coefficient $a_{11}$ is zero. The equations must be swapped or $D=0$ applies.</p>` };
+    }
+
+    let workingText = `<h3>Augmented Matrix Setup</h3>
+        <p>1. Start with the **Augmented Matrix**:</p>
         $$ \\begin{pmatrix} ${a0} & ${a1} & | & ${b_val0} \\\\ ${a2} & ${a3} & | & ${b_val1} \\end{pmatrix} $$
     `;
 
+    // Step 2: Row reduction to Row Echelon Form
     const factor = a2 / a0;
     const R2_prime_a3 = a3 - factor * a1;
     const R2_prime_b = b_val1 - factor * b_val0;
 
     const factorFraction = `${a2}/${a0}`;
 
-    workingText += `<p>2. **Eliminate** the first term in $\\mathbf{R_2}$ (Operation: $\\mathbf{R_2} \\leftarrow \\mathbf{R_2} - ${factorFraction} \\mathbf{R_1}$):</p>
-        <p>New Row 2 equation: $(${a2} - ${factor.toFixed(4)} \\cdot ${a0})x + (${a3} - ${factor.toFixed(4)} \\cdot ${a1})y = ${b_val1} - ${factor.toFixed(4)} \\cdot ${b_val0} $</p>
+    workingText += `<h3>Row Reduction (Forward Elimination)</h3>
+        <p>2. **Eliminate** the first term in $\\mathbf{R_2}$ (Operation: $\\mathbf{R_2} \\leftarrow \\mathbf{R_2} - \\left(\\frac{${a2}}{${a0}}\\right) \\mathbf{R_1}$):</p>
+        <p>New Row 2 coefficient $a_{22}'$: $a_{3} - \\left(\\frac{${a2}}{${a0}}\\right) a_{1} = ${a3} - (${factor.toFixed(4)}) \\cdot ${a1} = ${R2_prime_a3.toFixed(4)}$</p>
+        <p>New Row 2 constant $b_2'$: $b_{2} - \\left(\\frac{${a2}}{${a0}}\\right) b_{1} = ${b_val1} - (${factor.toFixed(4)}) \\cdot ${b_val0} = ${R2_prime_b.toFixed(4)}$</p>
+        
         <p>Resulting Matrix (**Row Echelon Form**):</p>
         $$ \\begin{pmatrix} ${a0} & ${a1} & | & ${b_val0} \\\\ 0 & ${R2_prime_a3.toFixed(4)} & | & ${R2_prime_b.toFixed(4)} \\end{pmatrix} $$
     `;
 
+    if (R2_prime_a3 === 0) {
+         return { solution: { x: NaN, y: NaN }, workingText: workingText + `<p class="error-msg">The system has no unique solution (Infinite or No Solutions).</p>` };
+    }
+    
+    // Step 3 & 4: Back Substitution
     const y = R2_prime_b / R2_prime_a3;
-    workingText += `<p>3. **Back-Substitution** (from $\\mathbf{R_2}$):</p>
-        $$ ${R2_prime_a3.toFixed(4)}y = ${R2_prime_b.toFixed(4)} \\implies y = \\frac{${R2_prime_b.toFixed(4)}}{${R2_prime_a3.toFixed(4)}} = ${y.toFixed(4)} $$
-    `;
-
     const x_num = b_val0 - a1 * y;
     const x = x_num / a0;
 
-    workingText += `<p>4. **Back-Substitution** (into $\\mathbf{R_1}$):</p>
-        $$ ${a0}x + ${a1}(${y.toFixed(4)}) = ${b_val0} \\implies x = ${x.toFixed(4)} $$
+    workingText += `<h3>Back Substitution</h3>
+        <p>3. Solve for $\\mathbf{y}$ using the new second equation ($0x + a_{22}'y = b_2'$):</p>
+        $$ ${R2_prime_a3.toFixed(4)}y = ${R2_prime_b.toFixed(4)} \\implies y = \\frac{${R2_prime_b.toFixed(4)}}{${R2_prime_a3.toFixed(4)}} = ${y.toFixed(4)} $$
+        
+        <p>4. Substitute $\\mathbf{y}$ back into the first equation ($a_{11}x + a_{12}y = b_1$) and solve for $\\mathbf{x}$:</p>
+        $$ ${a0}x + ${a1}(${y.toFixed(4)}) = ${b_val0} $$
+        $$ ${a0}x = ${b_val0} - (${a1 * y.toFixed(4)}) \\quad \\text{ (Substitution)} $$
+        $$ x = \\frac{${b_val0} - (${a1 * y.toFixed(4)})}{${a0}} = \\frac{${x_num.toFixed(4)}}{${a0}} = ${x.toFixed(4)} $$
     `;
 
     return { solution: { x: x, y: y }, workingText: workingText };
@@ -106,7 +133,6 @@ function generateScalarLinePlotData(A, b, finalX, finalY) {
     const a11 = A[0][0], a12 = A[0][1], b1 = b[0];
     const a21 = A[1][0], a22 = A[1][1], b2 = b[1];
 
-    // Slope-Intercept form y = mx + c
     return {
         line1_slope: (-a11 / a12),
         line1_intercept: (b1 / a12),
@@ -118,40 +144,43 @@ function generateScalarLinePlotData(A, b, finalX, finalY) {
 
 
 // --- DYNAMIC RENDERING AND CHART INTEGRATION ---
-let chartInstance = null; // To hold the active Chart.js instance
+let chartInstance = null; 
 
 /**
  * Custom renderer for mixing HTML and LaTeX.
  */
 function renderOutput(element, latexString) {
+    if (typeof katex === 'undefined') {
+        console.error("KaTeX library not loaded. Cannot render math.");
+        element.innerHTML = latexString; 
+        return;
+    }
+    
     const parts = latexString.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/);
     element.innerHTML = '';
 
     parts.forEach(part => {
         if (part.startsWith('$$') && part.endsWith('$$')) {
-            // Display math: $$...$$
             const mathDiv = document.createElement('div');
             mathDiv.className = 'math-block display-math';
             try {
                 katex.render(part.slice(2, -2).trim(), mathDiv, { throwOnError: true, displayMode: true });
             } catch (e) { 
                 console.error("KaTeX Display Error:", e);
-                mathDiv.textContent = `Math Rendering Error: ${part}`; 
+                mathDiv.textContent = `[MATH ERROR: ${part}]`; 
             }
             element.appendChild(mathDiv);
         } else if (part.startsWith('$') && part.endsWith('$')) {
-            // Inline math: $...$
             const mathSpan = document.createElement('span');
             mathSpan.className = 'math-block inline-math';
             try {
                 katex.render(part.slice(1, -1).trim(), mathSpan, { throwOnError: true, displayMode: false });
             } catch (e) { 
                 console.error("KaTeX Inline Error:", e);
-                mathSpan.textContent = `Math Rendering Error: ${part}`;
+                mathSpan.textContent = `[MATH ERROR: ${part}]`;
             }
             element.appendChild(mathSpan);
         } else {
-            // Plain HTML text (can contain other tags)
             if (part.trim() !== '') {
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = part.trim();
@@ -164,10 +193,16 @@ function renderOutput(element, latexString) {
 }
 
 /**
- * Renders static math in page titles and headers on load (Fixes unrendered text).
+ * Renders static math in page titles and headers on load.
  */
 function renderStaticKaTeX() {
-    // Target common elements where static math is placed
+    // Wait for KaTeX to load before running this.
+    if (typeof katex === 'undefined') {
+        setTimeout(renderStaticKaTeX, 50); 
+        return;
+    }
+    
+    // Ensure this targets all elements that need static rendering
     document.querySelectorAll('h1, h2, h3, p, footer, .system-info').forEach(element => {
         if (element.innerHTML.includes('$')) {
             renderOutput(element, element.innerHTML);
@@ -177,13 +212,23 @@ function renderStaticKaTeX() {
 
 /**
  * Renders the interactive graph on the vectors page.
+ * CRITICAL FIX: Ensures Chart.js and annotation plugin are ready.
  */
 function renderChart(scalarData, vectorData) {
+    if (typeof Chart === 'undefined') {
+        console.error("Chart.js library not loaded. Cannot render chart.");
+        return;
+    }
+    if (typeof Chart.register === 'function' && typeof chartjs.plugin.annotation === 'undefined') {
+         console.warn("Chart.js annotation plugin might not be correctly registered or loaded.");
+         // Note: Assuming the user has the CDN links loaded in their HTML as requested.
+    }
+    
     const ctx = document.getElementById('vector-plot-chart');
     if (!ctx) return;
 
     if (chartInstance) {
-        chartInstance.destroy(); // Destroy previous chart instance
+        chartInstance.destroy();
     }
 
     const { line1_slope, line1_intercept, line2_slope, line2_intercept, intersection } = scalarData;
@@ -191,20 +236,17 @@ function renderChart(scalarData, vectorData) {
     const X_INTERSECT = intersection.x;
     const Y_INTERSECT = intersection.y;
 
-    // Define the plotting range (simple heuristic based on intercepts and intersection)
     const allX = [0, X_INTERSECT, column_vector1.x, column_vector2.x, constant_vector_b.x];
     const allY = [0, Y_INTERSECT, column_vector1.y, column_vector2.y, constant_vector_b.y];
     
-    // Check if values are zero and adjust to include a range if necessary
     const padding = 2;
     const minX = Math.min(...allX) - padding;
     const maxX = Math.max(...allX) + padding;
     const minY = Math.min(...allY) - padding;
     const maxY = Math.max(...allY) + padding;
 
-    // Function to generate line points for a given range
     const generateLinePoints = (m, c, startX, endX) => {
-        const step = (endX - startX) / 20; // 20 steps for smooth line
+        const step = (endX - startX) / 20;
         const points = [];
         for (let x = startX; x <= endX; x += step) {
             points.push({ x: x, y: m * x + c });
@@ -212,13 +254,11 @@ function renderChart(scalarData, vectorData) {
         return points;
     };
 
-    // Calculate the scaled vectors for the column space interpretation
     const scaled_v1_x = vectorData.solution_vector.x * column_vector1.x;
     const scaled_v1_y = vectorData.solution_vector.x * column_vector1.y;
     const scaled_v2_x = vectorData.solution_vector.y * column_vector2.x;
     const scaled_v2_y = vectorData.solution_vector.y * column_vector2.y;
 
-    // Chart.js requires an array of annotations
     const annotationsArray = [];
 
     // Add Vector 1 (x * v1)
@@ -239,30 +279,28 @@ function renderChart(scalarData, vectorData) {
         type: 'scatter',
         data: {
             datasets: [
-                // --- SCALAR LINES (Row Space) ---
                 {
-                    label: 'Line 1',
+                    label: 'Line 1 (Row 1)',
                     data: generateLinePoints(line1_slope, line1_intercept, minX, maxX),
-                    borderColor: 'rgba(255, 99, 132, 0.8)', // Red
+                    borderColor: 'rgba(255, 99, 132, 0.8)', 
                     backgroundColor: 'rgba(255, 99, 132, 0)',
                     showLine: true,
                     fill: false,
                     pointRadius: 0
                 },
                 {
-                    label: 'Line 2',
+                    label: 'Line 2 (Row 2)',
                     data: generateLinePoints(line2_slope, line2_intercept, minX, maxX),
-                    borderColor: 'rgba(54, 162, 235, 0.8)', // Blue
+                    borderColor: 'rgba(54, 162, 235, 0.8)',
                     backgroundColor: 'rgba(54, 162, 235, 0)',
                     showLine: true,
                     fill: false,
                     pointRadius: 0
                 },
-                // --- INTERSECTION POINT (Solution) ---
                 {
                     label: `Intersection (${X_INTERSECT.toFixed(2)}, ${Y_INTERSECT.toFixed(2)})`,
                     data: [{ x: X_INTERSECT, y: Y_INTERSECT }],
-                    backgroundColor: 'rgba(40, 167, 69, 1)', // Green
+                    backgroundColor: 'rgba(40, 167, 69, 1)',
                     pointRadius: 7,
                     pointStyle: 'crossRot',
                 },
@@ -270,7 +308,7 @@ function renderChart(scalarData, vectorData) {
         },
         options: {
             responsive: true,
-            aspectRatio: 1, // Keep it square
+            aspectRatio: 1, 
             maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'top' },
@@ -299,12 +337,13 @@ function renderChart(scalarData, vectorData) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // CRITICAL FIX: RENDER STATIC MATH ON LOAD
+    // CRITICAL FIX 1: RENDER STATIC MATH ON LOAD (Fixes initial messy text)
     renderStaticKaTeX();
 
     // Check if we are on a calculator page 
     if (typeof methodId === 'undefined') return; 
 
+    // --- Selectors ---
     const form = document.getElementById('solver-form');
     const resultsDiv = document.getElementById('results');
     const finalSolutionSpan = document.getElementById('final-solution');
@@ -313,35 +352,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const vectorPlotOutput = document.getElementById('vector-plot-output');
     const scalarLineOutput = document.getElementById('scalar-line-output');
 
-    // ENSURE SUBMIT BUTTON WORKS
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
+    // CRITICAL FIX 2: ENSURE SUBMIT BUTTON WORKS
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
 
-        // 1. Get Input Values
-        const a11 = parseFloat(document.getElementById('a11').value);
-        const a12 = parseFloat(document.getElementById('a12').value);
-        const b1 = parseFloat(document.getElementById('b1').value);
-        const a21 = parseFloat(document.getElementById('a21').value);
-        const a22 = parseFloat(document.getElementById('a22').value);
-        const b2 = parseFloat(document.getElementById('b2').value);
+            // 1. Get Input Values
+            const a11 = parseFloat(document.getElementById('a11').value);
+            const a12 = parseFloat(document.getElementById('a12').value);
+            const b1 = parseFloat(document.getElementById('b1').value);
+            const a21 = parseFloat(document.getElementById('a21').value);
+            const a22 = parseFloat(document.getElementById('a22').value);
+            const b2 = parseFloat(document.getElementById('b2').value);
 
-        // Basic validation
-        if (isNaN(a11) || isNaN(a12) || isNaN(b1) || isNaN(a21) || isNaN(a22) || isNaN(b2)) {
-            alert("Please enter a valid number for all coefficients.");
-            return;
-        }
+            if (isNaN(a11) || isNaN(a12) || isNaN(b1) || isNaN(a21) || isNaN(a22) || isNaN(b2)) {
+                alert("Please enter a valid number for all coefficients.");
+                return;
+            }
 
-        // 2. Solve System
-        const result = solveSystem(a11, a12, b1, a21, a22, b2);
+            // 2. Solve System
+            const result = solveSystem(a11, a12, b1, a21, a22, b2);
 
-        // 3. Display Results
-        displayResults(result);
+            // 3. Display Results
+            displayResults(result);
 
-        // 4. Render Chart (only on the vectors page)
-        if (methodId === 'vectors' && result.det !== 0) {
-            renderChart(result.scalarLines, result.vectors);
-        }
-    });
+            // 4. Render Chart (only on the vectors page, requires Chart.js)
+            if (methodId === 'vectors' && result.det !== 0) {
+                renderChart(result.scalarLines, result.vectors);
+            }
+        });
+    }
 
     function displayResults(result) {
         resultsDiv.classList.remove('hidden');
@@ -352,9 +392,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Handle singular matrix / no unique solution
         if (result.det === 0) {
             if (chartInstance) chartInstance.destroy(); 
-            document.getElementById('vector-plot-chart').style.display = 'none';
+            const chartElement = document.getElementById('vector-plot-chart');
+            if (chartElement) chartElement.style.display = 'none';
 
-            // Use renderOutput for error messages to ensure they appear
             if (methodOutput) renderOutput(methodOutput, `<p class="error-msg">${result.solution}</p>`);
             if (vectorPlotOutput) renderOutput(vectorPlotOutput, `<p class="error-msg">The column vectors are linearly dependent, thus the system has no unique solution.</p>`);
             if (scalarLineOutput) renderOutput(scalarLineOutput, `<p class="error-msg">The lines are parallel or coincident.</p>`);
@@ -363,7 +403,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show chart area if it exists
         if (methodId === 'vectors') {
-             document.getElementById('vector-plot-chart').style.display = 'block';
+             const chartElement = document.getElementById('vector-plot-chart');
+             if (chartElement) chartElement.style.display = 'block';
         }
 
         // Display output specific to the current page 
@@ -372,7 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderOutput(methodOutput, result.cramers.workingText);
                 break;
             case 'gaussian':
-                // FIX: This ensures the Gaussian Elimination page is not blank
                 renderOutput(methodOutput, result.gaussian.workingText);
                 break;
             case 'vectors':
