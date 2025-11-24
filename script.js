@@ -1,4 +1,4 @@
-// --- ALL CALCULATION FUNCTIONS (Unchanged from previous response) ---
+// --- ALL CALCULATION FUNCTIONS (Kept clean for clarity) ---
 
 function solveSystem(a11, a12, b1, a21, a22, b2) {
     const A = [[a11, a12], [a21, a22]];
@@ -117,29 +117,19 @@ function generateScalarLinePlotData(A, b, finalX, finalY) {
 }
 
 
-// --- DOM MANIPULATION & RENDERING ---
+// --- DOM MANIPULATION & RENDERING FIXES ---
 
-// This function now uses katex.autoRender to find and render all math automatically.
-function initializeKaTeXOnPage() {
-    if (typeof katex !== 'undefined') {
-        katex.autoRender(document.body, {
-            delimiters: [
-                {left: '$$', right: '$$', display: true},
-                {left: '$', right: '$', display: false},
-            ],
-            throwOnError : false
-        });
-    }
-}
-
-// Function to render content within a specific element (used for calculation output)
+/**
+ * Custom renderer for mixing HTML and LaTeX.
+ * This is the function that fixes the "messed up text" issue.
+ */
 function renderOutput(element, latexString) {
-    // This is the custom renderer for HTML/LaTeX mixing in the calculator output
     const parts = latexString.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/);
     element.innerHTML = '';
 
     parts.forEach(part => {
         if (part.startsWith('$$') && part.endsWith('$$')) {
+            // Display math: $$...$$
             const mathDiv = document.createElement('div');
             mathDiv.className = 'math-block display-math';
             try {
@@ -147,6 +137,7 @@ function renderOutput(element, latexString) {
             } catch (e) { mathDiv.textContent = 'Math rendering error.'; }
             element.appendChild(mathDiv);
         } else if (part.startsWith('$') && part.endsWith('$')) {
+            // Inline math: $...$
             const mathSpan = document.createElement('span');
             mathSpan.className = 'math-block inline-math';
             try {
@@ -154,6 +145,7 @@ function renderOutput(element, latexString) {
             } catch (e) { mathSpan.textContent = 'Math rendering error.'; }
             element.appendChild(mathSpan);
         } else {
+            // Plain HTML text (can contain other tags)
             if (part.trim() !== '') {
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = part.trim();
@@ -165,13 +157,23 @@ function renderOutput(element, latexString) {
     });
 }
 
+/**
+ * Renders static math in page titles and headers on load.
+ */
+function renderStaticKaTeX() {
+    document.querySelectorAll('h1, h2, h3, p, footer').forEach(element => {
+        if (element.innerHTML.includes('$')) {
+            renderOutput(element, element.innerHTML);
+        }
+    });
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
-    // === FIX: INITIALIZES KATEX FOR ALL STATIC MATH ($...$) ON LOAD ===
-    initializeKaTeXOnPage();
-    // =================================================================
+    // RENDER STATIC MATH ON LOAD (FIXES LANDING PAGE TEXT)
+    renderStaticKaTeX();
 
-    // Check if we are on a calculator page (where methodId is defined)
+    // Check if we are on a calculator page (where methodId is defined globally)
     if (typeof methodId === 'undefined') return; 
 
     const form = document.getElementById('solver-form');
@@ -182,10 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const vectorPlotOutput = document.getElementById('vector-plot-output');
     const scalarLineOutput = document.getElementById('scalar-line-output');
 
-    // Initial check to prevent the script from immediately running the calculation
-    // if the user hasn't pressed the button yet.
-    // The submit event listener handles the actual calculation.
-    
+    // === FIX: ENSURE SUBMIT BUTTON WORKS ===
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -197,12 +196,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const a22 = parseFloat(document.getElementById('a22').value);
         const b2 = parseFloat(document.getElementById('b2').value);
 
+        // Basic validation for division by zero (for slopes/intercepts)
+        if (isNaN(a11) || isNaN(a12) || isNaN(b1) || isNaN(a21) || isNaN(a22) || isNaN(b2)) {
+            alert("Please enter a valid number for all coefficients.");
+            return;
+        }
+
         // 2. Solve System
         const result = solveSystem(a11, a12, b1, a21, a22, b2);
 
-        // 3. Display Results
+        // 3. Display Results (This function uses renderOutput to fix messed-up text)
         displayResults(result);
     });
+    // ======================================
 
     function displayResults(result) {
         resultsDiv.classList.remove('hidden');
@@ -218,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Display output specific to the current page
+        // Display output specific to the current page (uses renderOutput)
         switch (methodId) {
             case 'cramers':
                 renderOutput(methodOutput, result.cramers.workingText);
@@ -239,13 +245,13 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="vector-eq-box">$$ ${data.linear_combination_equation} $$</p>
             <p>The solution is the set of **scalars** (x, y) that satisfy this combination.</p>
             
-            <h4>Vectors for Plotting (Origin to Point):</h4>
+            <h4>Vectors for Plotting (Origin to Point): </h4>
             <ul>
                 <li>**Column Vector 1** ($\\vec{v_1}$): $\\begin{pmatrix} ${data.column_vector1.x} \\\\ ${data.column_vector1.y} \\end{pmatrix}$</li>
                 <li>**Column Vector 2** ($\\vec{v_2}$): $\\begin{pmatrix} ${data.column_vector2.x} \\\\ ${data.column_vector2.y} \\end{pmatrix}$</li>
                 <li>**Result Vector** ($\\vec{b}$): $\\begin{pmatrix} ${data.constant_vector_b.x} \\\\ ${data.constant_vector_b.y} \\end{pmatrix}$</li>
             </ul>
-            <p class="plot-hint">To plot the solution: draw $\\vec{v_1}$ scaled by $x$, then draw $\\vec{v_2}$ scaled by $y$ starting from the tip of the first vector. The final point reached should be the tip of $\\vec{b}$.  </p>
+            <p class="plot-hint">To plot this: The resultant vector $\\vec{b}$ is the diagonal of the parallelogram formed by the scaled vectors $x\\vec{v_1}$ and $y\\vec{v_2}$.</p>
         `;
         renderOutput(vectorPlotOutput, html);
     }
@@ -253,13 +259,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayScalarLinePlottingData(data) {
         const html = `
             <p>This is the traditional graphing method where the solution is the point of intersection of the two lines.</p>
-            <h4>Slope-Intercept Form ($y=mx+b$):</h4>
+            <h4>Slope-Intercept Form ($y=mx+b$): </h4>
             <ul>
                 <li>**Line 1**: $y = (${data.line1_slope})x + ${data.line1_intercept}$</li>
                 <li>**Line 2**: $y = (${data.line2_slope})x + ${data.line2_intercept}$</li>
             </ul>
             <p class="final-point">The intersection point is $\\mathbf{P}: (${data.intersection.x}, ${data.intersection.y})$</p>
-            <p class="plot-hint">  </p>
+            <p class="plot-hint">This intersection point $(x, y)$ is the solution that satisfies both equations simultaneously.</p>
         `;
         renderOutput(scalarLineOutput, html);
     }
