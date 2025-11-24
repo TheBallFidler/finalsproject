@@ -1,4 +1,4 @@
-// --- ALL CALCULATION FUNCTIONS (Unchanged) ---
+// --- ALL CALCULATION FUNCTIONS (Unchanged from previous versions) ---
 
 function solveSystem(a11, a12, b1, a21, a22, b2) {
     const A = [[a11, a12], [a21, a22]];
@@ -122,7 +122,6 @@ let chartInstance = null; // To hold the active Chart.js instance
 
 /**
  * Custom renderer for mixing HTML and LaTeX.
- * This is used for all dynamic output after calculation.
  */
 function renderOutput(element, latexString) {
     const parts = latexString.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/);
@@ -130,20 +129,29 @@ function renderOutput(element, latexString) {
 
     parts.forEach(part => {
         if (part.startsWith('$$') && part.endsWith('$$')) {
+            // Display math: $$...$$
             const mathDiv = document.createElement('div');
             mathDiv.className = 'math-block display-math';
             try {
-                katex.render(part.slice(2, -2).trim(), mathDiv, { throwOnError: false, displayMode: true });
-            } catch (e) { mathDiv.textContent = 'Math rendering error.'; }
+                katex.render(part.slice(2, -2).trim(), mathDiv, { throwOnError: true, displayMode: true });
+            } catch (e) { 
+                console.error("KaTeX Display Error:", e);
+                mathDiv.textContent = `Math Rendering Error: ${part}`; 
+            }
             element.appendChild(mathDiv);
         } else if (part.startsWith('$') && part.endsWith('$')) {
+            // Inline math: $...$
             const mathSpan = document.createElement('span');
             mathSpan.className = 'math-block inline-math';
             try {
-                katex.render(part.slice(1, -1).trim(), mathSpan, { throwOnError: false, displayMode: false });
-            } catch (e) { mathSpan.textContent = 'Math rendering error.'; }
+                katex.render(part.slice(1, -1).trim(), mathSpan, { throwOnError: true, displayMode: false });
+            } catch (e) { 
+                console.error("KaTeX Inline Error:", e);
+                mathSpan.textContent = `Math Rendering Error: ${part}`;
+            }
             element.appendChild(mathSpan);
         } else {
+            // Plain HTML text (can contain other tags)
             if (part.trim() !== '') {
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = part.trim();
@@ -159,6 +167,7 @@ function renderOutput(element, latexString) {
  * Renders static math in page titles and headers on load (Fixes unrendered text).
  */
 function renderStaticKaTeX() {
+    // Target common elements where static math is placed
     document.querySelectorAll('h1, h2, h3, p, footer, .system-info').forEach(element => {
         if (element.innerHTML.includes('$')) {
             renderOutput(element, element.innerHTML);
@@ -183,11 +192,15 @@ function renderChart(scalarData, vectorData) {
     const Y_INTERSECT = intersection.y;
 
     // Define the plotting range (simple heuristic based on intercepts and intersection)
+    const allX = [0, X_INTERSECT, column_vector1.x, column_vector2.x, constant_vector_b.x];
+    const allY = [0, Y_INTERSECT, column_vector1.y, column_vector2.y, constant_vector_b.y];
+    
+    // Check if values are zero and adjust to include a range if necessary
     const padding = 2;
-    const minX = Math.min(0, X_INTERSECT, line1_intercept/(-line1_slope) || 0, line2_intercept/(-line2_slope) || 0, constant_vector_b.x) - padding;
-    const maxX = Math.max(0, X_INTERSECT, line1_intercept/(-line1_slope) || 0, line2_intercept/(-line2_slope) || 0, constant_vector_b.x) + padding;
-    const minY = Math.min(0, Y_INTERSECT, line1_intercept, line2_intercept, constant_vector_b.y) - padding;
-    const maxY = Math.max(0, Y_INTERSECT, line1_intercept, line2_intercept, constant_vector_b.y) + padding;
+    const minX = Math.min(...allX) - padding;
+    const maxX = Math.max(...allX) + padding;
+    const minY = Math.min(...allY) - padding;
+    const maxY = Math.max(...allY) + padding;
 
     // Function to generate line points for a given range
     const generateLinePoints = (m, c, startX, endX) => {
@@ -205,13 +218,30 @@ function renderChart(scalarData, vectorData) {
     const scaled_v2_x = vectorData.solution_vector.y * column_vector2.x;
     const scaled_v2_y = vectorData.solution_vector.y * column_vector2.y;
 
+    // Chart.js requires an array of annotations
+    const annotationsArray = [];
+
+    // Add Vector 1 (x * v1)
+    if (Math.abs(vectorData.solution_vector.x) > 0.001) {
+        annotationsArray.push({ type: 'line', mode: 'horizontal', xMin: 0, xMax: scaled_v1_x, yMin: 0, yMax: scaled_v1_y, borderColor: 'orange', borderWidth: 3, label: { content: 'x * v1', enabled: true, position: 'start' } });
+    }
+    
+    // Add Vector 2 (y * v2) starting from tip of v1
+    if (Math.abs(vectorData.solution_vector.y) > 0.001) {
+        annotationsArray.push({ type: 'line', mode: 'horizontal', xMin: scaled_v1_x, xMax: scaled_v1_x + scaled_v2_x, yMin: scaled_v1_y, yMax: scaled_v1_y + scaled_v2_y, borderColor: 'purple', borderWidth: 3, label: { content: 'y * v2', enabled: true, position: 'start' } });
+    }
+
+    // Add Result Vector (b)
+    annotationsArray.push({ type: 'line', mode: 'horizontal', xMin: 0, xMax: constant_vector_b.x, yMin: 0, yMax: constant_vector_b.y, borderColor: 'black', borderWidth: 3, borderDash: [6, 6], label: { content: 'b (Result)', enabled: true, position: 'end' } });
+
+
     chartInstance = new Chart(ctx, {
         type: 'scatter',
         data: {
             datasets: [
                 // --- SCALAR LINES (Row Space) ---
                 {
-                    label: 'Line 1: y = ' + line1_slope.toFixed(2) + 'x + ' + line1_intercept.toFixed(2),
+                    label: 'Line 1',
                     data: generateLinePoints(line1_slope, line1_intercept, minX, maxX),
                     borderColor: 'rgba(255, 99, 132, 0.8)', // Red
                     backgroundColor: 'rgba(255, 99, 132, 0)',
@@ -220,7 +250,7 @@ function renderChart(scalarData, vectorData) {
                     pointRadius: 0
                 },
                 {
-                    label: 'Line 2: y = ' + line2_slope.toFixed(2) + 'x + ' + line2_intercept.toFixed(2),
+                    label: 'Line 2',
                     data: generateLinePoints(line2_slope, line2_intercept, minX, maxX),
                     borderColor: 'rgba(54, 162, 235, 0.8)', // Blue
                     backgroundColor: 'rgba(54, 162, 235, 0)',
@@ -233,11 +263,9 @@ function renderChart(scalarData, vectorData) {
                     label: `Intersection (${X_INTERSECT.toFixed(2)}, ${Y_INTERSECT.toFixed(2)})`,
                     data: [{ x: X_INTERSECT, y: Y_INTERSECT }],
                     backgroundColor: 'rgba(40, 167, 69, 1)', // Green
-                    pointRadius: 6,
+                    pointRadius: 7,
                     pointStyle: 'crossRot',
                 },
-                // --- VECTOR INTERPRETATION (Column Space) ---
-                // NOTE: Vectors are drawn using annotations, not scatter data points for arrows
             ]
         },
         options: {
@@ -247,16 +275,7 @@ function renderChart(scalarData, vectorData) {
             plugins: {
                 legend: { position: 'top' },
                 title: { display: true, text: 'System Visualization (Lines and Vectors)' },
-                annotation: {
-                    annotations: [
-                        // Vector 1 (x * v1)
-                        { type: 'line', mode: 'horizontal', xMin: 0, xMax: scaled_v1_x, yMin: 0, yMax: scaled_v1_y, borderColor: 'orange', borderWidth: 2, label: { content: 'x * v1', enabled: true, position: 'start' } },
-                        // Vector 2 (y * v2) starting from tip of v1
-                        { type: 'line', mode: 'horizontal', xMin: scaled_v1_x, xMax: scaled_v1_x + scaled_v2_x, yMin: scaled_v1_y, yMax: scaled_v1_y + scaled_v2_y, borderColor: 'purple', borderWidth: 2, label: { content: 'y * v2', enabled: true, position: 'start' } },
-                        // Result Vector (b)
-                        { type: 'line', mode: 'horizontal', xMin: 0, xMax: constant_vector_b.x, yMin: 0, yMax: constant_vector_b.y, borderColor: 'black', borderWidth: 3, borderDash: [6, 6], label: { content: 'b (Result)', enabled: true, position: 'end' } },
-                    ]
-                }
+                annotation: { annotations: annotationsArray }
             },
             scales: {
                 x: {
@@ -280,10 +299,10 @@ function renderChart(scalarData, vectorData) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // RENDER STATIC MATH ON LOAD (FIXES LANDING PAGE TEXT)
+    // CRITICAL FIX: RENDER STATIC MATH ON LOAD
     renderStaticKaTeX();
 
-    // Check if we are on a calculator page (where methodId is defined globally)
+    // Check if we are on a calculator page 
     if (typeof methodId === 'undefined') return; 
 
     const form = document.getElementById('solver-form');
@@ -294,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const vectorPlotOutput = document.getElementById('vector-plot-output');
     const scalarLineOutput = document.getElementById('scalar-line-output');
 
-    // FIX: ENSURE SUBMIT BUTTON WORKS
+    // ENSURE SUBMIT BUTTON WORKS
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -323,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderChart(result.scalarLines, result.vectors);
         }
     });
-    // ======================================
 
     function displayResults(result) {
         resultsDiv.classList.remove('hidden');
@@ -331,25 +349,24 @@ document.addEventListener('DOMContentLoaded', () => {
         finalSolutionSpan.textContent = result.solution;
         renderOutput(detInfo, `Determinant $\\mathbf{D}$ of $\\mathbf{A}$: ${result.det}`);
 
-        // Handle cases where no unique solution exists
+        // Handle singular matrix / no unique solution
         if (result.det === 0) {
-            // Clear or reset chart area if it exists
             if (chartInstance) chartInstance.destroy(); 
             document.getElementById('vector-plot-chart').style.display = 'none';
 
+            // Use renderOutput for error messages to ensure they appear
             if (methodOutput) renderOutput(methodOutput, `<p class="error-msg">${result.solution}</p>`);
             if (vectorPlotOutput) renderOutput(vectorPlotOutput, `<p class="error-msg">The column vectors are linearly dependent, thus the system has no unique solution.</p>`);
             if (scalarLineOutput) renderOutput(scalarLineOutput, `<p class="error-msg">The lines are parallel or coincident.</p>`);
             return;
         }
 
-        // Show chart area if it was hidden
+        // Show chart area if it exists
         if (methodId === 'vectors') {
              document.getElementById('vector-plot-chart').style.display = 'block';
         }
 
-
-        // Display output specific to the current page (uses renderOutput)
+        // Display output specific to the current page 
         switch (methodId) {
             case 'cramers':
                 renderOutput(methodOutput, result.cramers.workingText);
@@ -371,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="vector-eq-box">$$ ${data.linear_combination_equation} $$</p>
             <p>The solution is the set of **scalars** (x, y) that satisfy this combination.</p>
             
-            <h4>Vectors for Plotting (Origin to Point):</h4>
+            <h4>Vector Components:</h4>
             <ul>
                 <li>**Column Vector 1** ($\\vec{v_1}$): $\\begin{pmatrix} ${data.column_vector1.x} \\\\ ${data.column_vector1.y} \\end{pmatrix}$</li>
                 <li>**Column Vector 2** ($\\vec{v_2}$): $\\begin{pmatrix} ${data.column_vector2.x} \\\\ ${data.column_vector2.y} \\end{pmatrix}$</li>
