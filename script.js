@@ -119,8 +119,22 @@ function generateScalarLinePlotData(A, b, finalX, finalY) {
 
 // --- DOM MANIPULATION & RENDERING ---
 
-// Function to render LaTeX using KaTeX
+// This function now uses katex.autoRender to find and render all math automatically.
+function initializeKaTeXOnPage() {
+    if (typeof katex !== 'undefined') {
+        katex.autoRender(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+            ],
+            throwOnError : false
+        });
+    }
+}
+
+// Function to render content within a specific element (used for calculation output)
 function renderOutput(element, latexString) {
+    // This is the custom renderer for HTML/LaTeX mixing in the calculator output
     const parts = latexString.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/);
     element.innerHTML = '';
 
@@ -129,7 +143,6 @@ function renderOutput(element, latexString) {
             const mathDiv = document.createElement('div');
             mathDiv.className = 'math-block display-math';
             try {
-                // Renders display math: $$...$$
                 katex.render(part.slice(2, -2).trim(), mathDiv, { throwOnError: false, displayMode: true });
             } catch (e) { mathDiv.textContent = 'Math rendering error.'; }
             element.appendChild(mathDiv);
@@ -137,7 +150,6 @@ function renderOutput(element, latexString) {
             const mathSpan = document.createElement('span');
             mathSpan.className = 'math-block inline-math';
             try {
-                // Renders inline math: $...$
                 katex.render(part.slice(1, -1).trim(), mathSpan, { throwOnError: false, displayMode: false });
             } catch (e) { mathSpan.textContent = 'Math rendering error.'; }
             element.appendChild(mathSpan);
@@ -153,22 +165,11 @@ function renderOutput(element, latexString) {
     });
 }
 
-function initializeKaTeXOnPage() {
-    // This targets ALL elements on the page that might contain unrendered LaTeX
-    // (specifically targeting p and h tags to avoid processing script/input areas unnecessarily)
-    document.querySelectorAll('p, h1, h2, h3, h4, footer').forEach(element => {
-        // Only run if the element actually contains the unrendered '$' symbol
-        if (element.innerHTML.includes('$')) {
-            renderOutput(element, element.innerHTML);
-        }
-    });
-}
-
 
 document.addEventListener('DOMContentLoaded', () => {
-    // === FIX FOR UNRENDERED LATEX ON ALL PAGES ===
+    // === FIX: INITIALIZES KATEX FOR ALL STATIC MATH ($...$) ON LOAD ===
     initializeKaTeXOnPage();
-    // ===========================================
+    // =================================================================
 
     // Check if we are on a calculator page (where methodId is defined)
     if (typeof methodId === 'undefined') return; 
@@ -181,6 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const vectorPlotOutput = document.getElementById('vector-plot-output');
     const scalarLineOutput = document.getElementById('scalar-line-output');
 
+    // Initial check to prevent the script from immediately running the calculation
+    // if the user hasn't pressed the button yet.
+    // The submit event listener handles the actual calculation.
+    
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
