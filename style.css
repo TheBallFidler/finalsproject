@@ -1,210 +1,25 @@
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f4f8; /* Light blue/gray background */
-    color: #333;
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    min-height: 100vh;
-}
-
-.container {
-    background-color: #ffffff;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    max-width: 900px;
-    width: 100%;
-}
-
-h1 {
-    color: #007bff;
-    border-bottom: 3px solid #f0f4f8;
-    padding-bottom: 15px;
-    margin-bottom: 30px;
+/* --- System Form Placement Fix --- */
+.system-info {
     text-align: center;
-    font-weight: 600;
-}
-
-h2 {
-    color: #1e8449; /* Dark green for success */
-    margin-top: 20px;
-    padding-top: 10px;
-}
-
-h3 {
-    color: #4a4a4a;
-    font-size: 1.3em;
-    margin-top: 25px;
-    margin-bottom: 15px;
-}
-
-/* --- Navigation & Landing Page --- */
-
-.back-link {
-    display: inline-block;
-    margin-bottom: 20px;
-    text-decoration: none;
-    color: #555;
-    transition: color 0.2s;
-}
-
-.back-link:hover {
-    color: #007bff;
-    text-decoration: underline;
-}
-
-.button-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 25px;
-    margin: 40px 0;
-}
-
-.solver-button {
-    display: flex;
-    flex-direction: column;
-    padding: 25px;
-    background-color: #e6f7ff; /* Lightest blue */
-    border: 1px solid #007bff;
-    border-radius: 8px;
-    text-align: center;
-    text-decoration: none;
-    transition: transform 0.2s, box-shadow 0.2s;
-    height: 100%;
-}
-
-.solver-button:hover {
-    background-color: #d1ecf1; /* Slightly darker hover */
-    transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(0, 123, 255, 0.3);
-}
-
-.solver-button h3 {
-    color: #0056b3;
-    margin: 0 0 10px 0;
-    border-bottom: none;
-}
-
-.solver-button p {
-    color: #555;
-    flex-grow: 1;
-}
-
-/* --- Form and Inputs --- */
-
-.matrix-grid {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    padding: 20px;
-    border: 1px dashed #ccc;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-input[type="number"] {
-    padding: 10px;
-    border: 2px solid #ccc;
-    border-radius: 6px;
-    width: 70px;
-    text-align: center;
-    font-size: 1.1em;
-    transition: border-color 0.3s;
-}
-
-input[type="number"]:focus {
-    border-color: #007bff;
-    outline: none;
-}
-
-.operator {
-    font-weight: bold;
-    font-size: 1.2em;
-    color: #4a4a4a;
-}
-
-#solve-button {
-    padding: 12px 25px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1.1em;
-    font-weight: 600;
-    margin-top: 15px;
-    width: 100%;
-    transition: background-color 0.3s, transform 0.1s;
-}
-
-#solve-button:hover {
-    background-color: #1e7e34;
-}
-
-/* --- Results & Output Sections --- */
-
-#results {
-    margin-top: 30px;
-    border-top: 2px solid #eee;
-    padding-top: 20px;
-}
-
-.hidden {
-    display: none;
-}
-
-.method-section {
-    background-color: #f9f9ff;
-    border: 1px solid #d1d9ff;
-    padding: 20px;
-    border-radius: 8px;
+    margin-top: 25px; /* Moves it down from the H1 */
     margin-bottom: 25px;
+    border: 1px dashed #e0e0e0;
+    padding: 15px;
+    border-radius: 6px;
 }
 
-/* KaTeX Math Styling */
-.math-block.display-math {
-    text-align: center;
-    margin: 15px 0;
+.system-info .math-block.display-math {
+    /* Reduce the margin inside the block to keep the equations tighter */
+    margin: 5px 0; 
+}
+
+/* --- Chart/Graph Styling --- */
+.chart-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 20px auto;
+    background: #fcfcfc;
     padding: 10px;
-    background-color: #ffffff;
-    border: 1px solid #eee;
-    border-radius: 4px;
-    overflow-x: auto;
-}
-
-.vector-eq-box {
-    text-align: center;
-    font-weight: bold;
-    color: #0056b3;
-}
-
-.final-point {
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #dc3545; /* Red for final answer */
-    margin-top: 15px;
-    text-align: center;
-}
-
-.plot-hint {
-    font-style: italic;
-    color: #6c757d;
-    font-size: 0.95em;
-    margin-top: 10px;
-    border-left: 4px solid #007bff;
-    padding-left: 10px;
-}
-
-.error-msg {
-    color: #dc3545;
-    font-weight: bold;
-    text-align: center;
-    padding: 10px;
-    border: 1px solid #dc3545;
-    background-color: #f8d7da;
-    border-radius: 4px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
