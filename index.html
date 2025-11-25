@@ -1,24 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2x2 System Solver Hub</title>
+    <title>2x2 Linear System Solver Hub</title>
+    
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    
 </head>
 <body>
     <div class="container">
         <h1>📊 2x2 Linear System Solver Hub</h1>
         
         <div class="system-info">
-            <p>System Form:</p>
+            <p>The system to be solved is:</p>
             $$ a_{11}x + a_{12}y = b_1 $$
             $$ a_{21}x + a_{22}y = b_2 $$
         </div>
@@ -28,20 +26,20 @@
         <div class="button-grid">
             <a href="cramers.html" class="solver-button">
                 <h3>1. Cramer's Rule</h3>
-                <p>Solves using determinants.</p>
+                <p>Solves using determinants. Shows all $D, D_x, D_y$ calculations.</p>
             </a>
             <a href="gaussian.html" class="solver-button">
                 <h3>2. Gaussian Elimination</h3>
-                <p>Solves using row reduction.</p>
+                <p>Solves using row reduction. Shows augmented matrix steps.</p>
             </a>
             <a href="vectors.html" class="solver-button">
                 <h3>3. Vectors & Plotting</h3>
-                <p>Solves and visualizes the solution in a vector space.</p>
+                <p>Solves and visualizes the solution in a vector space (Linear Combination).</p>
             </a>
         </div>
         
         <footer>
-            <p>Ready to solve!</p>
+            <p>Ready to solve! (Ensure $\mathbf{a_{11}} \neq 0$ for Gaussian method)</p>
         </footer>
     </div>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
