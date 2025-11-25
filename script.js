@@ -14,8 +14,8 @@ function solveSystem(a11, a12, b1, a21, a22, b2) {
         scalarLines: null
     };
 
-    if (det === 0) {
-        output.solution = "No unique solution (Determinant is 0).";
+    if (Math.abs(det) < 1e-9) { // Using tolerance for near-zero check
+        output.solution = "No unique solution (Determinant is 0 or near 0).";
         return output;
     }
 
@@ -50,18 +50,18 @@ function calculateCramersRule(A, b, det) {
         $$ \\mathbf{A} = \\begin{pmatrix} ${a11} & ${a12} \\\\ ${a21} & ${a22} \\end{pmatrix}, \\quad \\mathbf{b} = \\begin{pmatrix} ${b1} \\\\ ${b2} \\end{pmatrix} $$
         
         <p>1. Calculate the **Determinant (D)** of $\\mathbf{A}$:</p>
-        $$ D = \\begin{vmatrix} ${a11} & ${a12} \\\\ ${a21} & ${a22} \\end{vmatrix} = (${a11})(${a22}) - (${a12})(${a21}) = (${a11 * a22}) - (${a12 * a21}) = ${det} $$
+        $$ D = \\begin{vmatrix} ${a11} & ${a12} \\\\ ${a21} & ${a22} \\end{vmatrix} = (${a11})(${a22}) - (${a12})(${a21}) = (${(a11 * a22).toFixed(4)}) - (${(a12 * a21).toFixed(4)}) = ${det.toFixed(4)} $$
         
         <h3>Solving for Variables</h3>
         <p>2. Calculate $\\mathbf{D_x}$ (Replace column 1 with $\\mathbf{b}$):</p>
-        $$ D_x = \\begin{vmatrix} ${b1} & ${a12} \\\\ ${b2} & ${a22} \\end{vmatrix} = (${b1})(${a22}) - (${a12})(${b2}) = (${b1 * a22}) - (${a12 * b2}) = ${det_x} $$
+        $$ D_x = \\begin{vmatrix} ${b1} & ${a12} \\\\ ${b2} & ${a22} \\end{vmatrix} = (${b1})(${a22}) - (${a12})(${b2}) = (${(b1 * a22).toFixed(4)}) - (${(a12 * b2).toFixed(4)}) = ${det_x.toFixed(4)} $$
         
         <p>3. Calculate $\\mathbf{D_y}$ (Replace column 2 with $\\mathbf{b}$):</p>
-        $$ D_y = \\begin{vmatrix} ${a11} & ${b1} \\\\ ${a21} & ${b2} \\end{vmatrix} = (${a11})(${b2}) - (${b1})(${a21}) = (${a11 * b2}) - (${b1 * a21}) = ${det_y} $$
+        $$ D_y = \\begin{vmatrix} ${a11} & ${b1} \\\\ ${a21} & ${b2} \\end{vmatrix} = (${a11})(${b2}) - (${b1})(${a21}) = (${(a11 * b2).toFixed(4)}) - (${(b1 * a21).toFixed(4)}) = ${det_y.toFixed(4)} $$
         
         <p>4. Calculate $\\mathbf{x}$ and $\\mathbf{y}$ using the rule $x = D_x/D$ and $y = D_y/D$:</p>
-        $$ x = \\frac{D_x}{D} = \\frac{${det_x}}{${det}} = ${x.toFixed(4)} $$
-        $$ y = \\frac{D_y}{D} = \\frac{${det_y}}{${det}} = ${y.toFixed(4)} $$
+        $$ x = \\frac{D_x}{D} = \\frac{${det_x.toFixed(4)}}{${det.toFixed(4)}} = ${x.toFixed(4)} $$
+        $$ y = \\frac{D_y}{D} = \\frac{${det_y.toFixed(4)}}{${det.toFixed(4)}} = ${y.toFixed(4)} $$
     `;
 
     return { solution: { x: x, y: y }, workingText: workingText };
@@ -71,7 +71,7 @@ function calculateGaussianElimination(A, b) {
     let a0 = A[0][0], a1 = A[0][1], b_val0 = b[0];
     let a2 = A[1][0], a3 = A[1][1], b_val1 = b[1];
     
-    if (a0 === 0) {
+    if (Math.abs(a0) < 1e-9) {
         return { solution: { x: NaN, y: NaN }, workingText: `<p class="error-msg">The leading coefficient $a_{11}$ is zero. The equations must be swapped to proceed with standard Gaussian Elimination.</p>` };
     }
 
@@ -96,7 +96,7 @@ function calculateGaussianElimination(A, b) {
         $$ \\begin{pmatrix} ${a0} & ${a1} & | & ${b_val0} \\\\ 0 & ${R2_prime_a3.toFixed(4)} & | & ${R2_prime_b.toFixed(4)} \\end{pmatrix} $$
     `;
 
-    if (Math.abs(R2_prime_a3) < 1e-9) { // Check for near-zero coefficient
+    if (Math.abs(R2_prime_a3) < 1e-9) { 
          return { solution: { x: NaN, y: NaN }, workingText: workingText + `<p class="error-msg">The system has no unique solution (Infinite or No Solutions).</p>` };
     }
     
@@ -111,7 +111,7 @@ function calculateGaussianElimination(A, b) {
         
         <p>4. Substitute $\\mathbf{y}$ back into the first equation ($a_{11}x + a_{12}y = b_1$) and solve for $\\mathbf{x}$:</p>
         $$ ${a0}x + ${a1}(${y.toFixed(4)}) = ${b_val0} $$
-        $$ ${a0}x = ${b_val0} - (${a1 * y}) $$
+        $$ ${a0}x = ${b_val0} - (${a1.toFixed(4)} \\cdot ${y.toFixed(4)}) $$
         $$ x = \\frac{${x_num.toFixed(4)}}{${a0}} = ${x.toFixed(4)} $$
     `;
 
@@ -154,6 +154,7 @@ function renderOutput(element, latexString) {
         return;
     }
     
+    // Improved regex to handle math blocks ($$..$$) and inline math ($..$)
     const parts = latexString.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/);
     element.innerHTML = '';
 
@@ -193,6 +194,7 @@ function renderOutput(element, latexString) {
  */
 function renderStaticKaTeX() {
     if (typeof katex === 'undefined') {
+        // Retry later if KaTeX hasn't loaded yet
         setTimeout(renderStaticKaTeX, 50); 
         return;
     }
@@ -329,7 +331,7 @@ function renderChart(scalarData, vectorData) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // CRITICAL FIX 1: RENDER STATIC MATH ON LOAD (Fixes initial messy text)
+    // CRITICAL FIX: Ensure static KaTeX runs on load
     renderStaticKaTeX();
 
     // Determine the current page method ID from the HTML (if defined)
@@ -345,22 +347,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const vectorPlotOutput = document.getElementById('vector-plot-output');
     const scalarLineOutput = document.getElementById('scalar-line-output');
 
-    // CRITICAL FIX 2: ENSURE SUBMIT BUTTON WORKS
+    // CRITICAL FIX: ENSURE SUBMIT BUTTON WORKS
     if (form) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
 
             // 1. Get Input Values
-            const a11 = parseFloat(document.getElementById('a11').value);
-            const a12 = parseFloat(document.getElementById('a12').value);
-            const b1 = parseFloat(document.getElementById('b1').value);
-            const a21 = parseFloat(document.getElementById('a21').value);
-            const a22 = parseFloat(document.getElementById('a22').value);
-            const b2 = parseFloat(document.getElementById('b2').value);
+            const a11 = parseFloat(document.getElementById('a11').value || 0);
+            const a12 = parseFloat(document.getElementById('a12').value || 0);
+            const b1 = parseFloat(document.getElementById('b1').value || 0);
+            const a21 = parseFloat(document.getElementById('a21').value || 0);
+            const a22 = parseFloat(document.getElementById('a22').value || 0);
+            const b2 = parseFloat(document.getElementById('b2').value || 0);
 
-            if (isNaN(a11) || isNaN(a12) || isNaN(b1) || isNaN(a21) || isNaN(a22) || isNaN(b2)) {
-                alert("Please enter a valid number for all coefficients.");
-                return;
+            // Simple check that all fields have non-zero values for meaningful calculation
+            if (a11 === 0 && a12 === 0 && a21 === 0 && a22 === 0) {
+                 alert("Please enter coefficients for the system.");
+                 return;
             }
 
             // 2. Solve System
@@ -370,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
             displayResults(result);
 
             // 4. Render Chart (only on the vectors page, requires Chart.js)
-            if (methodId === 'vectors' && result.det !== 0) {
+            if (methodId === 'vectors' && Math.abs(result.det) > 1e-9) {
                 renderChart(result.scalarLines, result.vectors);
             }
         });
@@ -380,10 +383,10 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsDiv.classList.remove('hidden');
 
         finalSolutionSpan.textContent = result.solution;
-        renderOutput(detInfo, `Determinant $\\mathbf{D}$ of $\\mathbf{A}$: ${result.det}`);
+        renderOutput(detInfo, `Determinant $\\mathbf{D}$ of $\\mathbf{A}$: ${result.det.toFixed(4)}`);
 
         // Handle singular matrix / no unique solution
-        if (result.det === 0) {
+        if (Math.abs(result.det) < 1e-9) {
             if (chartInstance) chartInstance.destroy(); 
             const chartElement = document.getElementById('vector-plot-chart');
             if (chartElement) chartElement.style.display = 'none';
